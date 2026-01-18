@@ -1,0 +1,12 @@
+\documentclass[tikz]{standalone}
+\begin{document}
+\begin{tikzpicture}
+  \foreach \i in {0,1,2,3} {
+    \foreach \j in {0,1,2} {
+      \draw (\i,\j) rectangle ++(1,1);
+    }
+  }
+
+  \node at (1.5,1.5) {$A_{ij}$};
+\end{tikzpicture}
+\end{document}
