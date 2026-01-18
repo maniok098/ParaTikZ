@@ -3,6 +3,7 @@ import subprocess
 import time
 import argparse
 from typing import List
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 def mirror_directory_structure(src_root: str, out_root: str):
     """
@@ -49,33 +50,50 @@ def find_outdated_tex_files(src_root: str, out_root: str) -> List[tuple]:
 
 def run_parallel_lualatex(jobs: List[tuple], max_threads: int):
     """
-    Use GNU parallel to compile tex files with lualatex in parallel.
+    Compile tex files with lualatex in parallel using Python (cross-platform).
     """
     if not jobs:
         print("No .tex files need recompilation.")
         return
 
-    print(f"Found {len(jobs)} .tex file(s) to compile. Launching parallel compilation with maximum allowed {max_threads} threads.")
-
-    # Create command list for GNU parallel
-    commands = [
-        f"TEXINPUTS={src_root}: lualatex -halt-on-error -interaction=batchmode -output-directory='{pdf_dir}' '{tex_path}' > /dev/null"
-        for tex_path, pdf_dir in jobs
-    ]
-
-    # Write commands to temporary file
-    with open("tmp_compile_jobs.txt", "w") as f:
-        for cmd in commands:
-            f.write(cmd + "\n")
-
-    # Run them using parallel
-    subprocess.run(
-        ["parallel", "-j", str(max_threads), "::::", f"tmp_compile_jobs.txt"],
-        check=True
+    print(
+        f"Found {len(jobs)} .tex file(s) to compile. "
+        f"Launching parallel compilation with maximum allowed {max_threads} threads."
     )
 
-    # Clean up
-    os.remove("tmp_compile_jobs.txt")
+    def compile_one(tex_path: str, pdf_dir: str):
+        env = os.environ.copy()
+        # TEXINPUTS needs trailing os.pathsep
+        # This helps if tex files include other files in the source root
+        env["TEXINPUTS"] = src_root + os.pathsep + env.get("TEXINPUTS", "")
+
+        cmd = [
+            "lualatex",
+            "-halt-on-error",
+            "-interaction=batchmode",
+            "-output-directory", pdf_dir,
+            tex_path,
+        ]
+
+        result = subprocess.run(
+            cmd,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            env=env,
+        )
+
+        if result.returncode != 0:
+            raise RuntimeError(f"Compilation failed: {tex_path}")
+
+    # Run in parallel
+    with ThreadPoolExecutor(max_workers=max_threads) as executor:
+        futures = [
+            executor.submit(compile_one, tex_path, pdf_dir)
+            for tex_path, pdf_dir in jobs
+        ]
+
+        for future in as_completed(futures):
+            future.result()  # re-raise exceptions if any
 
 
 if __name__ == "__main__":

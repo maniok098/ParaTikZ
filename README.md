@@ -1,5 +1,5 @@
 # ParaTikZ
-A stupid simple python script to compile **standalone TikZ figures** in parallel **on Linux**. 
+A stupid simple python script to compile **standalone TikZ figures** in parallel. 
 
 This is designed for large LaTeX projects where many TikZ figures are compiled independently and benefit from parallel execution.
 
@@ -11,8 +11,8 @@ This is designed for large LaTeX projects where many TikZ figures are compiled i
 - Simple implementation, no external Python dependencies
 
 ## Requirements
-- `GNU parallel`, install it on ArchLinux `sudo pacman -S parallel`
-- `Python`
+
+- `Python>=3.8`
 - `lualatex`, tested with `TexLive`
 
 ## Execution
