@@ -17,6 +17,6 @@ This is designed for large LaTeX projects where many TikZ figures are compiled i
 
 ## Execution
 ```python
-    python compileTikzParallel.py figs/src figs/out/out -j 8
+    python compileTikzParallel.py figs/src figs/out -j 8
 ```
 
